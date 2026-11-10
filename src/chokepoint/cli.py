@@ -3,16 +3,18 @@
 from __future__ import annotations
 
 import argparse
+import ipaddress
+import os
 import random
 import socket
 import sys
-import threading
 import time
 
 from . import __version__
-from .analysis import analyze_links, load_links
+from .analysis import analyze_links, load_links, load_names
 from .collectors import UdpCollector, build_packet
 from .models import Flow
+from .server import Dashboard, make_server
 from .storage import SqliteStore
 
 
@@ -107,6 +109,39 @@ def cmd_bottlenecks(args: argparse.Namespace) -> int:
     return 1 if any(s.level == "critical" for s in statuses) else 0
 
 
+def _is_loopback(host: str) -> bool:
+    if host == "localhost":
+        return True
+    try:
+        return ipaddress.ip_address(host).is_loopback
+    except ValueError:
+        return False
+
+
+def cmd_serve(args: argparse.Namespace) -> int:
+    host, port = args.listen
+    auth = args.auth or os.environ.get("CHOKEPOINT_AUTH") or None
+    if auth and ":" not in auth:
+        print("error: auth must look like user:password", file=sys.stderr)
+        return 2
+    links = load_links(args.config) if args.config and os.path.exists(args.config) else []
+    names = load_names(args.names) if args.names and os.path.exists(args.names) else {}
+    store = SqliteStore(args.db)
+    server = make_server(host, port, Dashboard(store, links, names, auth))
+    print(f"Chokepoint web UI on http://{host}:{port}/  (db: {args.db}, Ctrl+C to stop)")
+    if not _is_loopback(host) and not auth:
+        print("warning: listening on a non-loopback address WITHOUT authentication; "
+              "set CHOKEPOINT_AUTH=user:password or use --auth", file=sys.stderr)
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt:
+        pass
+    finally:
+        server.server_close()
+        store.close()
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="chokepoint", description="Network flow visualization and bottleneck detection")
     p.add_argument("--version", action="version", version=f"chokepoint {__version__}")
@@ -135,6 +170,15 @@ def build_parser() -> argparse.ArgumentParser:
     b.add_argument("--config", default="links.toml")
     b.add_argument("--window", type=float, default=300)
     b.set_defaults(func=cmd_bottlenecks)
+
+    w = sub.add_parser("serve", help="run the web UI and JSON API")
+    w.add_argument("--listen", type=_hostport, default=("127.0.0.1", 8080), metavar="HOST:PORT")
+    w.add_argument("--db", default="flows.db")
+    w.add_argument("--config", default="links.toml", help="link capacities (optional)")
+    w.add_argument("--names", default="names.toml", help="IP to name mapping (optional)")
+    w.add_argument("--auth", default=None, metavar="USER:PASSWORD",
+                   help="enable HTTP Basic auth (prefer the CHOKEPOINT_AUTH environment variable)")
+    w.set_defaults(func=cmd_serve)
     return p
 
 

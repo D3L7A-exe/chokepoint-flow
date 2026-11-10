@@ -23,4 +23,16 @@ class FlowStore(Protocol):
         """Total bytes leaving `interface` on `exporter` for flows ending after `since`."""
         ...
 
+    def graph_edges(self, since: float, limit: int = 1000) -> list[tuple[str, str, int, int]]:
+        """Return (src, dst, total_bytes, total_packets) per host pair, largest first."""
+        ...
+
+    def timeline(self, since: float, bucket_seconds: float) -> list[tuple[float, int]]:
+        """Return (bucket_start_timestamp, total_bytes) ordered by time."""
+        ...
+
+    def totals(self, since: float) -> tuple[int, int]:
+        """Return (flow_count, total_bytes) for flows ending after `since`."""
+        ...
+
     def close(self) -> None: ...

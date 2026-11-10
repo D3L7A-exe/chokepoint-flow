@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Chokepoint</title>
+  <link rel="stylesheet" href="/app.css">
+</head>
+<body>
+  <header class="bar">
+    <h1>Chokepoint</h1>
+    <div class="filters" id="windows" role="group" aria-label="Time window">
+      <button type="button" data-window="300" aria-pressed="true">5 min</button>
+      <button type="button" data-window="900" aria-pressed="false">15 min</button>
+      <button type="button" data-window="3600" aria-pressed="false">1 hour</button>
+      <button type="button" data-window="21600" aria-pressed="false">6 hours</button>
+      <button type="button" data-window="86400" aria-pressed="false">24 hours</button>
+    </div>
+    <label class="toggle"><input type="checkbox" id="collapse" checked> Group external hosts</label>
+    <span class="spacer"></span>
+    <span id="status" role="status" aria-live="polite">Loading…</span>
+    <button type="button" id="pause" aria-pressed="false">Pause</button>
+  </header>
+
+  <main>
+    <section class="kpis" aria-label="Summary">
+      <div class="kpi"><div class="kpi-label">Traffic</div><div class="kpi-value" id="kpi-rate">–</div><div class="kpi-sub" id="kpi-bytes">&nbsp;</div></div>
+      <div class="kpi"><div class="kpi-label">Flows</div><div class="kpi-value" id="kpi-flows">–</div><div class="kpi-sub">in window</div></div>
+      <div class="kpi"><div class="kpi-label">Hosts</div><div class="kpi-value" id="kpi-hosts">–</div><div class="kpi-sub">with traffic</div></div>
+      <div class="kpi"><div class="kpi-label">Busiest link</div><div class="kpi-value" id="kpi-link">–</div><div class="kpi-sub" id="kpi-link-sub">&nbsp;</div></div>
+    </section>
+
+    <section class="card map-card">
+      <div class="card-head">
+        <h2>Network map</h2>
+        <button type="button" id="view-toggle" aria-pressed="false">Table view</button>
+      </div>
+      <div class="map-wrap">
+        <svg id="map" viewBox="0 0 900 560" role="img" aria-label="Network map of hosts and traffic between them"></svg>
+        <div class="table-scroll"><table id="map-table" hidden></table></div>
+        <p id="map-empty" class="empty" hidden></p>
+      </div>
+      <div class="legend">
+        <span>Less traffic</span><span class="ramp" aria-hidden="true"></span><span>More traffic</span>
+        <span class="note">Line colour and width show bytes in the window. Drag a host to move it.</span>
+      </div>
+    </section>
+
+    <section class="card side-a">
+      <div class="card-head"><h2>Bottlenecks</h2></div>
+      <div id="links"></div>
+    </section>
+
+    <section class="card side-b">
+      <div class="card-head"><h2>Top talkers</h2></div>
+      <div id="talkers"></div>
+    </section>
+
+    <section class="card wide">
+      <div class="card-head"><h2>Traffic over time</h2></div>
+      <svg id="timeline" viewBox="0 0 900 220" role="img" aria-label="Traffic in megabits per second over the selected window"></svg>
+    </section>
+
+    <section class="card wide">
+      <div class="card-head"><h2>Top flows</h2></div>
+      <div class="table-scroll">
+        <table id="flows">
+          <thead><tr><th>Source</th><th>Destination</th><th class="num">Port</th><th class="num">Bytes</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <div id="tip" role="tooltip" hidden></div>
+  <script src="/app.js" defer></script>
+</body>
+</html>

@@ -8,10 +8,12 @@
 - [x] CLI and traffic simulator
 
 ## v0.2: see it
-- [ ] REST API (FastAPI) and WebSocket live updates
-- [ ] Web UI: network map with link thickness and color by load
+- [x] JSON API and live-refreshing dashboard (stdlib server, no dependencies)
+- [x] Web UI: network map with named hosts, link thickness and color by traffic
+- [x] Bottleneck panel, top talkers, traffic over time, accessible table view
+- [x] Optional HTTP Basic auth
 - [ ] Sankey view of top flows
-- [ ] Time slider and history
+- [x] Time windows (5 min to 24 h)
 
 ## v0.3: more sources
 - [ ] NetFlow v9 / IPFIX

@@ -34,6 +34,9 @@ class SqliteStore:
         self._conn = sqlite3.connect(path, check_same_thread=False)
         self._lock = threading.Lock()
         with self._lock:
+            # WAL lets the collector process write while the web server process reads.
+            self._conn.execute("PRAGMA journal_mode=WAL")
+            self._conn.execute("PRAGMA busy_timeout=5000")
             self._conn.executescript(SCHEMA)
 
     def add_flows(self, flows: Iterable[Flow]) -> None:
@@ -72,6 +75,34 @@ class SqliteStore:
                 (exporter, interface, since),
             )
             return int(cur.fetchone()[0])
+
+    def graph_edges(self, since: float, limit: int = 1000) -> list[tuple[str, str, int, int]]:
+        with self._lock:
+            cur = self._conn.execute(
+                "SELECT src, dst, SUM(bytes) b, SUM(packets) FROM flows WHERE end >= ? "
+                "GROUP BY src, dst ORDER BY b DESC LIMIT ?",
+                (since, limit),
+            )
+            return [(r[0], r[1], r[2], r[3]) for r in cur.fetchall()]
+
+    def timeline(self, since: float, bucket_seconds: float) -> list[tuple[float, int]]:
+        if bucket_seconds <= 0:
+            raise ValueError("bucket_seconds must be positive")
+        with self._lock:
+            cur = self._conn.execute(
+                "SELECT CAST(end / ? AS INTEGER) * ? AS t, SUM(bytes) FROM flows WHERE end >= ? "
+                "GROUP BY t ORDER BY t",
+                (bucket_seconds, bucket_seconds, since),
+            )
+            return [(float(r[0]), int(r[1])) for r in cur.fetchall()]
+
+    def totals(self, since: float) -> tuple[int, int]:
+        with self._lock:
+            cur = self._conn.execute(
+                "SELECT COUNT(*), COALESCE(SUM(bytes), 0) FROM flows WHERE end >= ?", (since,)
+            )
+            row = cur.fetchone()
+            return int(row[0]), int(row[1])
 
     def close(self) -> None:
         with self._lock:

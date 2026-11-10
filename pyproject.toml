@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "chokepoint-flow"
-version = "0.1.0"
+version = "0.2.0"
 description = "Network flow visualization and bottleneck detection (NetFlow/IPFIX/SNMP)"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -19,6 +19,9 @@ chokepoint = "chokepoint.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+chokepoint = ["web/*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

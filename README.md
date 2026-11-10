@@ -37,6 +37,27 @@ interface = 2
 capacity_mbps = 1000
 ```
 
+## Web UI
+
+```bash
+chokepoint serve --db chokepoint.db --config links.toml --names names.toml
+# open http://127.0.0.1:8080
+```
+
+- `links.toml`: link capacities for bottleneck verdicts (see `links.example.toml`).
+- `names.toml`: friendly names, e.g. `[names]` table mapping `"192.168.1.10" = "proxmox"`.
+- Public IPs are grouped into "Internet" and multicast into "Multicast" (toggle in the UI).
+
+The server listens on `127.0.0.1` by default. To expose it on your LAN, enable authentication:
+
+```bash
+export CHOKEPOINT_AUTH='admin:a-long-random-password'
+chokepoint serve --listen 0.0.0.0:8080
+```
+
+HTTP Basic auth sends credentials in clear text. Put it behind a reverse proxy with TLS if it
+leaves a trusted network. The UI has no external dependencies and uses a strict CSP.
+
 ## How it works
 
 ```
