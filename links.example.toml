@@ -1,0 +1,7 @@
+# Copy to links.toml and adjust. `exporter` is the IP the flow records arrive from,
+# `interface` is the SNMP ifIndex of the output interface on that device.
+[[link]]
+name = "core-uplink"
+exporter = "127.0.0.1"
+interface = 2
+capacity_mbps = 100
